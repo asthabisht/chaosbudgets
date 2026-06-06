@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Co Chaos — Quote Generator</title>
+<meta name="theme-color" content="#f1f3f6">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f1f3f6;--p1:#ffffff;--p2:#f5f7f9;--field:#ffffff;--bd:#e2e6ec;
+    --tx:#1c2430;--mut:#717a88;--acc:#4b525c;--acc-tx:#ffffff;
+    --sh:0 1px 2px rgba(20,30,45,.05),0 2px 6px rgba(20,30,45,.05);--focus:rgba(75,82,92,.18);
+  }
+  body[data-theme="dark"]{
+    --bg:#15171b;--p1:#1e2127;--p2:#23262d;--field:#191c21;--bd:#2f343c;
+    --tx:#e8eaed;--mut:#99a2b0;--acc:#c7ccd4;--acc-tx:#181b20;
+    --sh:0 1px 2px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.25);--focus:rgba(199,204,212,.18);
+  }
+  *{box-sizing:border-box}
+  body{margin:0 auto;background:var(--bg);color:var(--tx);font-family:"Montserrat",system-ui,sans-serif;padding:22px;max-width:1000px;transition:background .2s,color .2s}
+  .disp{font-weight:800;letter-spacing:-.01em}
+  .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+  .acc{color:var(--acc)}.cost{color:var(--mut)}
+  input,select{background:var(--field);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:8px 10px;font:13px "Montserrat",sans-serif;width:100%}
+  input::placeholder{color:var(--mut);opacity:.6}
+  input:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--focus)}
+  .lbl{font:600 9px/1 "Montserrat",sans-serif;color:var(--mut);text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px}
+  .btn{cursor:pointer;border:none;border-radius:8px;font:600 12px "Montserrat",sans-serif;display:inline-flex;align-items:center;gap:6px;padding:9px 14px;transition:.12s}
+  .btn[disabled]{opacity:.55;cursor:default}
+  .btn.acc{background:var(--acc);color:var(--acc-tx)}.btn.acc:hover{opacity:.88}
+  .btn.ghost{background:var(--p1);border:1px solid var(--bd);color:var(--tx)}.btn.ghost:hover{border-color:var(--acc)}
+  .top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--bd)}
+  .kicker{font:600 10px/1 "Montserrat",sans-serif;letter-spacing:.16em;color:var(--mut);text-transform:uppercase;margin-bottom:6px}
+  .seg{display:flex;background:var(--p1);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+  .seg button{padding:8px 14px;border:none;background:transparent;color:var(--mut);font:600 12px "Montserrat",sans-serif;cursor:pointer}
+  .seg button.on{background:var(--acc);color:var(--acc-tx)}
+  .icon{width:38px;justify-content:center;font-size:15px;padding:9px 0}
+  .card{background:var(--p1);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:16px;box-shadow:var(--sh)}
+  .fields{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .hint{font-size:11px;color:var(--mut);margin-top:9px}
+  .ratestatus{font:500 10.5px "Montserrat",sans-serif;color:var(--mut);margin-bottom:12px;display:flex;align-items:center;gap:6px;cursor:pointer}
+  .dot{width:7px;height:7px;border-radius:50%;background:#2e9e5b;display:inline-block}
+  .sec{margin-bottom:14px}
+  .sechead{display:flex;justify-content:space-between;align-items:center;padding:0 2px 6px;margin-bottom:7px;border-bottom:1px solid var(--bd);font-weight:700;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+  .sechead .tag{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:9px;vertical-align:middle}
+  .line{background:var(--p1);border:1px solid var(--bd);border-radius:9px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:11px;flex-wrap:wrap;box-shadow:var(--sh)}
+  .lmain{flex:1;min-width:150px}
+  .lname{font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .lsub{font-size:10.5px;color:var(--mut);margin-top:2px}
+  .pill{font:600 9px "Montserrat",sans-serif;padding:2px 7px;border-radius:5px;border:1px solid;cursor:pointer;background:var(--p1);letter-spacing:.04em}
+  .ledit{display:flex;gap:6px}.ledit input{width:60px;padding:5px 7px}
+  .ledit input[data-act=cost]{color:var(--mut)}
+  .lfig{text-align:right;min-width:96px}.lfig .cost{font-size:10.5px;color:var(--mut)}.lfig .sell{font-size:14px;font-weight:700;color:var(--acc)}
+  .x{background:none;border:none;color:var(--mut);cursor:pointer;font-size:13px;opacity:.6}.x:hover{opacity:1}
+  .lbasis{flex-basis:100%;font-size:10.5px;color:var(--mut);margin-top:8px;padding-top:8px;border-top:1px dashed var(--bd)}
+  .empty{border:1px dashed var(--bd);border-radius:12px;padding:42px;text-align:center;color:var(--mut);font-weight:600;background:var(--p1)}
+  #totals{background:var(--p1);border:1px solid var(--bd);border-radius:12px;padding:18px;margin-top:16px;box-shadow:var(--sh)}
+  .trow{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;color:var(--mut)}
+  .trow .mono{color:var(--tx)}
+  .grand{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:12px;border-top:1px solid var(--bd);font-weight:700;font-size:15px}
+  .grand .acc{font-size:27px;font-weight:800}
+  @media print{.noprint{display:none!important}body{padding:0;max-width:none}.line,.card,#totals{box-shadow:none}}
+</style>
+</head>
+<body data-theme="light">
+  <div class="top noprint">
+    <div>
+      <div class="kicker">Co Chaos · Estimated Quote Builder</div>
+      <div class="disp" id="hdrEvent" style="font-size:24px">New estimate</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="seg"><button id="v_internal" class="on">Internal</button><button id="v_client">Client view</button></div>
+      <button class="btn ghost" id="exportXlsx">Export Excel</button>
+      <button class="btn ghost" id="exportPdf">PDF</button>
+      <button class="btn ghost icon" id="themeBtn" title="Toggle light / dark">☾</button>
+    </div>
+  </div>
+
+  <div class="fields noprint" style="margin-bottom:16px">
+    <div style="width:210px"><div class="lbl">Client</div><input id="h_client" placeholder="Property Finder"></div>
+    <div style="width:250px"><div class="lbl">Event</div><input id="h_event" placeholder="Brand Activation Day"></div>
+    <div style="width:160px"><div class="lbl">Job Code</div><input id="h_job" placeholder="PF60500"></div>
+  </div>
+
+  <div class="card noprint">
+    <div class="fields">
+      <div style="width:230px"><div class="lbl">Item</div><input id="fItem" placeholder="Fridge Magnets / Cutout Logo…"></div>
+      <div style="width:62px"><div class="lbl">Qty</div><input id="fQty" value="1"></div>
+      <div style="width:62px"><div class="lbl">W</div><input id="fW"></div>
+      <div style="width:62px"><div class="lbl">H</div><input id="fH"></div>
+      <div style="width:74px"><div class="lbl">Unit</div><select id="fUnit"><option>mm</option><option>cm</option><option>m</option></select></div>
+      <div style="width:62px"><div class="lbl">Days</div><input id="fDays"></div>
+      <div style="width:70px"><div class="lbl">Perf hrs</div><input id="fDur"></div>
+      <button class="btn acc" id="addBtn" style="padding:10px 18px;font-size:13px">+ Add</button>
+    </div>
+    <div class="hint">W/H + unit for scenic (per m²), Days for rentals, Perf hrs for talent. Giveaways just need Qty.</div>
+  </div>
+
+  <div class="ratestatus noprint" id="rateStatus" title="click to re-sync">syncing library…</div>
+
+  <div id="budget"></div>
+  <div id="totals"></div>
+
+  <script src="./xlsx.full.min.js"></script>
+  <script src="./engine.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
