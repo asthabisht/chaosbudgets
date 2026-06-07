@@ -1,38 +1,24 @@
-# Co Chaos — Quote Generator (offline PWA)
+# Quote Generator — standalone offline app
 
-Line items in → Enigma-branded estimated quote out. Pulls the shared rate library from
-review-enigma `/api/rates`, caches it, works offline, and installs as a Chrome app.
-Light/dark, grey corporate theme. Deploy as its OWN site.
+Separate app from review-enigma. Builds Enigma-branded estimated quotes and produces
+the fully styled Excel and client PDF entirely on your device — no server, works offline.
 
-## 1. Configure  (edit `app.js`, top of file)
-```
-var API_BASE    = "https://YOUR-review-enigma-domain";  // shared rate library (/api/rates)
-var EXPORT_BASE = "https://YOUR-export-service";         // branded xlsx/pdf (/generate)
-```
-- `API_BASE` "" → uses bundled starter rates until the watcher fills the library.
-- `EXPORT_BASE` "" → exports use the plain in-browser path (no green fills / styled PDF).
-  Set it to the export-service URL to get the branded files.
+## Deploy
+Drag this folder onto Netlify as its OWN new site. Install it as a Chrome app from the
+address bar to use it like a desktop / offline app.
 
-## 2. Deploy (its own URL)
-Drag this folder into Netlify (new site) or any static host. No build step.
+## How it works
+- On open it pulls the shared rate library from review-enigma.com/api/rates and caches it
+  in the browser. It re-syncs each time you open it (and when you tap the status line), so
+  new supplier rates added on review-enigma are picked up automatically.
+- Offline: the app shell + the export libraries are cached; it uses the last-synced library.
+- Export Excel → internal working budget (green section bars, blue cost columns, live
+  formulas, margin %, centred header, T&C). Export PDF → client quote (ENIGMA wordmark,
+  centred title block, green SUB TOTAL bars, totals, footer, T&C page).
+  Both are generated locally and look identical online or offline. The client PDF is
+embedded with your Proxima Nova so it renders in the real brand font on any device.
 
-## 3. Install as a Chrome app
-Open the URL in Chrome → install icon in the address bar. Opens standalone, works offline.
-
-## Exports
-- **Export Excel** → internal working budget (BUY/sell/profit, green section bars, blue
-  cost columns, live formulas, margin %, T&C).
-- **PDF** → client-facing quote (ENIGMA wordmark, centered title block, 4-col table,
-  green SUB TOTAL bars, totals, footer address, T&C page).
-Both come from the export-service when `EXPORT_BASE` is set. If it's unreachable (offline),
-the app falls back to a plain in-browser Excel / browser-print PDF so you're never blocked.
-
-## Offline behaviour
-- App shell cached by the service worker (`sw.js`) — opens with no connection.
-- Rates cached in the browser from the last sync; tap the status line to re-sync.
-- Theme choice, current quote, and rates persist in the browser (localStorage).
-
-## The export-service
-See `../export-service` — a small FastAPI app (openpyxl + reportlab) that produces the
-branded files. Deploy it alongside your rate watcher (Render / Railway) and point
-`EXPORT_BASE` at it.
+## Config (already set)
+  API_BASE = https://review-enigma.com   (top of app.js — where the library is read from)
+If review-enigma is on its Netlify subdomain instead of the custom domain, change that one
+line to the subdomain and redeploy. There is no export server to configure.

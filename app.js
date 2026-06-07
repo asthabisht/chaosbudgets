@@ -1,11 +1,8 @@
-/* app.js — Co Chaos quote generator (deployable PWA) */
+/* app.js — Co Chaos quote generator (offline PWA, fully client-side branded exports) */
 
 // ===== CONFIG =====
-// review-enigma origin that serves the shared rate library at /api/rates
-var API_BASE = "";        // e.g. "https://review-enigma.netlify.app"
-// Python export service that returns the branded xlsx / client PDF (/generate).
-// Leave "" to use the plain in-browser export only.
-var EXPORT_BASE = "https://cochaos-export.onrender.com";   // live Render export service
+// Where the shared rate library lives (review-enigma /api/rates). Cached for offline use.
+var API_BASE = "https://review-enigma.com";
 
 var E = window.ENGINE;
 var STATE = { header:{client:"",event:"",job:""}, items:[], rates:E.DEFAULT_RATES.slice(), view:"internal" };
@@ -27,7 +24,7 @@ function cacheRates(r){ try{ localStorage.setItem("cc_rates", JSON.stringify(r))
 function setTheme(t){ document.body.setAttribute("data-theme",t); try{ localStorage.setItem("cc_theme",t); }catch(e){} $("themeBtn").textContent = t==="dark"?"☀":"☾"; }
 function loadTheme(){ var t="light"; try{ t=localStorage.getItem("cc_theme")||"light"; }catch(e){} setTheme(t); }
 
-/* ---- shared rate library ---- */
+/* ---- shared rate library (cached, refreshes when online) ---- */
 function syncRates(){
   var st=$("rateStatus"); if(st) st.innerHTML='<span class="dot" style="background:#c0892e"></span> syncing library…';
   fetch(API_BASE + "/api/rates", {cache:"no-store"})
@@ -82,24 +79,19 @@ function render(){
 }
 function row(l,v,c){ return '<div class="trow"><span>'+esc(l)+'</span><span class="mono '+(c||"")+'">'+v+'</span></div>'; }
 
-/* ---- export ---- */
-function buildPayload(){
-  var sections=E.groupSections(STATE.items, STATE.rates).map(function(sec){
-    return { title:sec.title, excl:sec.excl, lines:sec.lines.map(function(L){
-      return { item:L.it.item, qty:L.qcol, unitBuy:L.unitCost, supplier:L.supplier||"", contact:L.contact||"", note:L.note||"", confidence:L.confidence||"" };
-    })};
-  });
-  return { header:{ client:STATE.header.client, event:STATE.header.event, job:STATE.header.job, version:"Estimated Budget V1", date:"" }, sections:sections };
-}
-function downloadBlob(blob, name){ var u=URL.createObjectURL(blob); var a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); },4000); }
-function busy(btn,on,label){ btn.disabled=on; btn.textContent = on?"Generating…":label; }
-function serverExport(format, filename){
-  var p=buildPayload(); p.format=format; p.filename=filename;
-  return fetch(EXPORT_BASE + "/generate", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(p)})
-    .then(function(r){ if(!r.ok) throw new Error("export failed"); return r.blob(); })
-    .then(function(b){ downloadBlob(b, filename + (format==="pdf"?".pdf":".xlsx")); });
-}
-function plainXlsx(filename){ var wb=E.buildWorkbook(XLSX, STATE.header, STATE.items, STATE.rates); XLSX.writeFile(wb, filename+".xlsx"); }
+/* ---- exports (100% client-side, work offline & always branded) ---- */
+$("exportXlsx").addEventListener("click", function(){
+  if(!STATE.items.length) return;
+  var fn="Estimated_Budget_"+((STATE.header.job||"CoChaos").replace(/\s+/g,"_"));
+  try{ XLSX.writeFile(E.buildWorkbook(XLSX, STATE.header, STATE.items, STATE.rates), fn+".xlsx"); }
+  catch(err){ alert("Excel export failed: "+err.message); }
+});
+$("exportPdf").addEventListener("click", function(){
+  if(!STATE.items.length) return;
+  var fn="Estimated_Quote_"+((STATE.header.job||"CoChaos").replace(/\s+/g,"_"));
+  try{ var doc=E.buildClientPdf(window.jspdf.jsPDF, null, STATE.header, STATE.items, STATE.rates, window.CC_PROXIMA_B64); doc.save(fn+".pdf"); }
+  catch(err){ alert("PDF export failed: "+err.message); }
+});
 
 /* ---- events ---- */
 ["client","event","job"].forEach(function(k){ var el=$("h_"+k); el.value=STATE.header[k]||""; el.addEventListener("input",function(){ STATE.header[k]=el.value; save(); render(); }); });
@@ -108,22 +100,6 @@ $("fItem").addEventListener("keydown", function(e){ if(e.key==="Enter") addItem(
 ["internal","client"].forEach(function(v){ $("v_"+v).addEventListener("click", function(){ STATE.view=v; $("v_internal").classList.toggle("on",v==="internal"); $("v_client").classList.toggle("on",v==="client"); render(); }); });
 $("themeBtn").addEventListener("click", function(){ setTheme(document.body.getAttribute("data-theme")==="dark"?"light":"dark"); });
 $("rateStatus").addEventListener("click", syncRates);
-
-$("exportXlsx").addEventListener("click", function(){
-  if(!STATE.items.length) return;
-  var fn="Estimated_Budget_"+((STATE.header.job||"CoChaos").replace(/\s+/g,"_"));
-  if(EXPORT_BASE){ busy(this,true); var b=this;
-    serverExport("xlsx",fn).catch(function(){ plainXlsx(fn); }).then(function(){ busy(b,false,"Export Excel"); });
-  } else { plainXlsx(fn); }
-});
-$("exportPdf").addEventListener("click", function(){
-  if(!STATE.items.length) return;
-  var fn="Estimated_Quote_"+((STATE.header.job||"CoChaos").replace(/\s+/g,"_"));
-  if(EXPORT_BASE){ busy(this,true); var b=this;
-    serverExport("pdf",fn).catch(function(){ window.print(); }).then(function(){ busy(b,false,"PDF"); });
-  } else { window.print(); }
-});
-
 $("budget").addEventListener("click", function(e){
   var act=e.target.getAttribute("data-act"); if(!act) return;
   var lineEl=e.target.closest(".line"); if(!lineEl) return; var uid=lineEl.getAttribute("data-uid");
