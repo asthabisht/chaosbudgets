@@ -5,7 +5,7 @@
 var API_BASE = "";        // e.g. "https://review-enigma.netlify.app"
 // Python export service that returns the branded xlsx / client PDF (/generate).
 // Leave "" to use the plain in-browser export only.
-var EXPORT_BASE = "";     // e.g. "https://cochaos-export.onrender.com"
+var EXPORT_BASE = "https://cochaos-export.onrender.com";   // live Render export service
 
 var E = window.ENGINE;
 var STATE = { header:{client:"",event:"",job:""}, items:[], rates:E.DEFAULT_RATES.slice(), view:"internal" };
